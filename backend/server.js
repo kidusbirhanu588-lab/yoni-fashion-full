@@ -5,18 +5,19 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ==================== MIDDLEWARE ====================
 app.use(express.json());
 app.use(cors({
   origin: [
     'http://localhost:5000',
     'http://localhost:3000',
     'https://yoni-fashion-frontend.netlify.app',
-    /\.netlify\.app$/,   // allows any netlify subdomain
+    /\.netlify\.app$/,
   ],
   credentials: true,
 }));
@@ -34,10 +35,9 @@ app.use(helmet({
   },
 }));
 app.use(morgan('dev'));
-const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-// Database connection
+// ==================== DATABASE ====================
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -50,7 +50,7 @@ const Product = require('./models/Product');
 const Review = require('./models/Review');
 const Order = require('./models/Order');
 
-// GET /api/products – Public: fetch all products
+// GET /api/products – fetch all products
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -60,7 +60,7 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// GET /api/reviews – Public: fetch approved reviews only
+// GET /api/reviews – fetch approved reviews only
 app.get('/api/reviews', async (req, res) => {
   try {
     const reviews = await Review.find({ approved: true }).sort({ createdAt: -1 });
@@ -70,7 +70,7 @@ app.get('/api/reviews', async (req, res) => {
   }
 });
 
-// POST /api/orders – Public: submit a new order
+// POST /api/orders – submit a new order
 app.post('/api/orders', async (req, res) => {
   try {
     const order = new Order(req.body);
@@ -81,7 +81,7 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// POST /api/reviews – Public: submit a review (pending approval)
+// POST /api/reviews – submit a review (pending approval)
 app.post('/api/reviews', async (req, res) => {
   try {
     const review = new Review({ ...req.body, approved: false });
@@ -92,25 +92,25 @@ app.post('/api/reviews', async (req, res) => {
   }
 });
 
-// API TEST
+// API health check
 app.get('/api/test', (req, res) => {
   res.json({ success: true, message: 'Yoni Fashion API is live ✅' });
 });
 
-// Admin routes
+// ==================== ADMIN ROUTES ====================
 const adminRouter = require('./routes/admin');
 app.use('/api/admin', adminRouter);
 
-// Serve frontend folder (must come AFTER API routes)
+// ==================== STATIC FILES ====================
+// Must come AFTER all API routes
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Catch-all: serve index.html for any non-API route (SPA support)
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-  }
+// Catch-all for SPA: Express 5 compatible wildcard syntax
+app.get('/{*path}', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
+// ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
