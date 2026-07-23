@@ -1,3 +1,6 @@
+// ==================== GLOBAL API CONFIG ====================
+const API_URL = "https://yoni-fashion-backend.onrender.com/api";
+
 // ==================== MOBILE MENU TOGGLE ====================
 const hamburger = document.getElementById('hamburger');
 const navList = document.querySelector('.nav-list');
